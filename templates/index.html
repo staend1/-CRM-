@@ -992,11 +992,11 @@
                     <input type="text" class="custom-input" id="custom_${index}" placeholder="새 이름 입력..." style="display: none;">
                 `;
 
-                // 넘어가기 (허용)
+                // 넘어가기 (허용) - 기본 선택
                 const skipRadioId = `radio_${index}_skip`;
                 optionsHTML += `
                     <div class="edit-option" onclick="selectOption(this)">
-                        <input type="radio" id="${skipRadioId}" name="edit_${index}" value="skip">
+                        <input type="radio" id="${skipRadioId}" name="edit_${index}" value="skip" checked>
                         <label for="${skipRadioId}">넘어가기 (현재 상태 유지)</label>
                     </div>
                 `;
