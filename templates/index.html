@@ -670,21 +670,21 @@
         </div>
     </div>
 
-    <!-- 편집 모달 -->
-    <div class="modal" id="editModal">
-        <div class="modal-content">
+    <!-- 통합 편집 모달 -->
+    <div class="modal" id="unifiedEditModal">
+        <div class="modal-content" style="max-width: 1100px;">
             <div class="modal-header">
-                <h2 id="modalTitle">매핑 편집</h2>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <h2>🔗 유사 항목 통합 편집</h2>
+                <button class="modal-close" onclick="closeUnifiedModal()">&times;</button>
             </div>
-            <div class="modal-body" id="modalBody">
+            <div class="modal-body" id="unifiedModalBody" style="max-height: 70vh; overflow-y: auto;">
                 <!-- 동적으로 생성됨 -->
             </div>
             <div class="modal-footer">
-                <div class="progress" id="modalProgress">0 / 0</div>
+                <div class="progress" id="unifiedModalProgress">0개 그룹</div>
                 <div class="actions">
-                    <button class="btn-skip" onclick="skipAllModal()">모두 넘어가기</button>
-                    <button class="btn-apply" onclick="applyChanges()">반영하고 재분석</button>
+                    <button class="btn-skip" onclick="closeUnifiedModal()">취소</button>
+                    <button class="btn-apply" onclick="applyUnifiedChanges()">모든 시트에 반영</button>
                 </div>
             </div>
         </div>
@@ -813,10 +813,10 @@
             html += '</tbody></table>';
             html += '</div>';
 
-            // 3. 차집합 분석 (그룹별 고유 항목)
+            // 3. 차집합 분석 (간소화 버전)
             html += '<div class="section">';
             html += '<h2>🔍 차집합 분석</h2>';
-            html += '<p style="margin-bottom: 15px; color: #666;">각 그룹에 있지만 다른 특정 그룹에는 없는 항목들입니다. 데이터 이관 시 매핑되지 않을 수 있으니 확인이 필요합니다.</p>';
+            html += '<p style="margin-bottom: 15px; color: #666;">각 그룹에 있지만 다른 특정 그룹에는 없는 항목들입니다.</p>';
 
             for (const [key, value] of Object.entries(data.coverage_matrix)) {
                 if (value.missing.length > 0) {
@@ -826,7 +826,6 @@
                             <div>
                                 <strong>${from}</strong>에는 있지만 <strong>${to}</strong>에는 없음
                                 <span class="badge warning">${value.missing.length}개</span>
-                                <button class="edit-btn" onclick="event.stopPropagation(); openEditModal('${key}')">✏️ 편집</button>
                             </div>
                         </div>
                         <div class="collapsible-content">
@@ -834,22 +833,9 @@
                                 <ul>
                     `;
 
-                    // 각 missing 항목과 유사 항목 표시
+                    // 항목만 간단히 표시 (유사도 제거)
                     for (const missingItem of value.missing) {
-                        html += `<li>${missingItem.item}`;
-
-                        // 유사 항목이 있으면 표시
-                        if (missingItem.suggestions && missingItem.suggestions.length > 0) {
-                            html += '<div style="margin-left: 20px; margin-top: 8px; padding: 8px; background: #f3f4ff; border-left: 3px solid #667eea; border-radius: 4px;">';
-                            html += '<div style="font-size: 11px; color: #666; margin-bottom: 4px; font-weight: 600;">🔗 유사한 항목 (확인 필요):</div>';
-                            for (const suggestion of missingItem.suggestions) {
-                                const scoreColor = suggestion.score >= 90 ? '#28a745' : suggestion.score >= 80 ? '#ffc107' : '#667eea';
-                                html += `<div style="font-size: 12px; color: #333; margin: 2px 0;">→ ${suggestion.text} <span style="background: ${scoreColor}; color: white; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 11px;">${suggestion.score}% 유사</span></div>`;
-                            }
-                            html += '</div>';
-                        }
-
-                        html += '</li>';
+                        html += `<li>${missingItem.item}</li>`;
                     }
 
                     html += `
@@ -860,6 +846,11 @@
                 }
             }
 
+            html += '</div>';
+
+            // 통합 편집 버튼 추가
+            html += '<div style="text-align: center; margin-top: 30px;">';
+            html += '<button class="analyze-btn" onclick="openUnifiedEditor()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">✏️ 유사 항목 통합 편집</button>';
             html += '</div>';
 
             // 4. 교집합 분석
@@ -941,11 +932,245 @@
             }
         }
 
-        // ========== 편집 모달 기능 ==========
-        let editModalData = {};
-        let currentEditKey = '';
-        let editsToApply = {};
+        // ========== 통합 편집 모달 기능 ==========
+        let unifiedEdits = {}; // LocalStorage에 저장될 데이터
 
+        // LocalStorage에서 편집 데이터 로드
+        function loadEditsFromStorage() {
+            const saved = localStorage.getItem('salesmap_unified_edits');
+            if (saved) {
+                unifiedEdits = JSON.parse(saved);
+            }
+        }
+
+        // LocalStorage에 편집 데이터 저장
+        function saveEditsToStorage() {
+            localStorage.setItem('salesmap_unified_edits', JSON.stringify(unifiedEdits));
+        }
+
+        // 페이지 로드 시 저장된 데이터 불러오기
+        loadEditsFromStorage();
+
+        function openUnifiedEditor() {
+            if (!currentData || !currentData.similar_groups) {
+                alert('먼저 데이터를 분석해주세요.');
+                return;
+            }
+
+            const similarGroups = currentData.similar_groups;
+            const modalBody = document.getElementById('unifiedModalBody');
+            modalBody.innerHTML = '';
+
+            if (similarGroups.length === 0) {
+                modalBody.innerHTML = '<p style="text-align: center; padding: 40px; color: #666;">유사한 항목이 없습니다.</p>';
+                document.getElementById('unifiedEditModal').classList.add('show');
+                return;
+            }
+
+            similarGroups.forEach((group, groupIndex) => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'edit-item';
+                groupDiv.style.marginBottom = '30px';
+
+                let html = `
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px 8px 0 0; margin: -20px -20px 15px -20px;">
+                        <strong style="font-size: 16px;">그룹 ${groupIndex + 1}</strong>
+                        <span style="opacity: 0.9; margin-left: 10px;">${group.items_list.length}개 유사 항목</span>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong style="color: #667eea;">대표 이름 선택:</strong>
+                    </div>
+                    <div class="edit-options">
+                `;
+
+                // 저장된 값이 있으면 불러오기
+                const savedRep = unifiedEdits[`group_${groupIndex}`]?.representative;
+                const savedMerges = unifiedEdits[`group_${groupIndex}`]?.merges || {};
+
+                // 각 항목을 라디오 버튼으로 표시
+                group.items_list.forEach((item, itemIndex) => {
+                    const radioId = `unified_rep_${groupIndex}_${itemIndex}`;
+                    const isDefault = item.text === group.representative;
+                    const isChecked = savedRep ? (savedRep === item.text) : isDefault;
+                    const groupsText = item.groups.join(', ');
+
+                    html += `
+                        <div class="edit-option" onclick="selectUnifiedOption(this, ${groupIndex})">
+                            <input type="radio"
+                                   id="${radioId}"
+                                   name="unified_rep_${groupIndex}"
+                                   value="${item.text}"
+                                   ${isChecked ? 'checked' : ''}
+                                   onchange="saveUnifiedEdit(${groupIndex})">
+                            <label for="${radioId}" style="flex: 1;">
+                                <strong>${item.text}</strong>
+                                <div style="font-size: 11px; color: #666; margin-top: 4px;">
+                                    출현: ${item.count}개 시트 (${groupsText})
+                                </div>
+                            </label>
+                        </div>
+                    `;
+                });
+
+                html += `
+                    </div>
+                    <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #e0e0e0;">
+                        <strong style="color: #667eea;">병합할 항목 선택:</strong>
+                        <div style="font-size: 12px; color: #666; margin-top: 5px;">체크된 항목은 대표 이름으로 변경됩니다</div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                `;
+
+                // 병합 체크박스
+                group.items_list.forEach((item, itemIndex) => {
+                    const checkId = `unified_merge_${groupIndex}_${itemIndex}`;
+                    const isChecked = savedMerges[item.text] !== undefined ? savedMerges[item.text] : true;
+
+                    html += `
+                        <div style="padding: 8px; margin: 4px 0;">
+                            <input type="checkbox"
+                                   id="${checkId}"
+                                   value="${item.text}"
+                                   ${isChecked ? 'checked' : ''}
+                                   onchange="saveUnifiedEdit(${groupIndex})"
+                                   style="margin-right: 8px;">
+                            <label for="${checkId}">${item.text}</label>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+
+                groupDiv.innerHTML = html;
+                groupDiv.setAttribute('data-group-index', groupIndex);
+                groupDiv.setAttribute('data-group-data', JSON.stringify(group));
+                modalBody.appendChild(groupDiv);
+            });
+
+            document.getElementById('unifiedModalProgress').textContent = `${similarGroups.length}개 그룹`;
+            document.getElementById('unifiedEditModal').classList.add('show');
+        }
+
+        function selectUnifiedOption(element, groupIndex) {
+            const radio = element.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                saveUnifiedEdit(groupIndex);
+            }
+        }
+
+        function saveUnifiedEdit(groupIndex) {
+            // 대표 이름
+            const repRadio = document.querySelector(`input[name="unified_rep_${groupIndex}"]:checked`);
+            if (!repRadio) return;
+
+            const representative = repRadio.value;
+
+            // 병합할 항목들
+            const mergeCheckboxes = document.querySelectorAll(`input[id^="unified_merge_${groupIndex}_"]`);
+            const merges = {};
+
+            mergeCheckboxes.forEach(checkbox => {
+                merges[checkbox.value] = checkbox.checked;
+            });
+
+            // 저장
+            unifiedEdits[`group_${groupIndex}`] = {
+                representative: representative,
+                merges: merges
+            };
+
+            saveEditsToStorage();
+        }
+
+        function closeUnifiedModal() {
+            document.getElementById('unifiedEditModal').classList.remove('show');
+        }
+
+        function applyUnifiedChanges() {
+            if (!currentData || !currentData.similar_groups) return;
+
+            const similarGroups = currentData.similar_groups;
+            const numGroups = parseInt(document.getElementById('numGroups').value);
+
+            // 각 그룹의 변경사항 수집
+            const allChanges = {}; // groupName -> [{old, new}]
+
+            for (let i = 0; i < numGroups; i++) {
+                allChanges[document.getElementById(`groupName${i}`).value] = [];
+            }
+
+            similarGroups.forEach((group, groupIndex) => {
+                const edit = unifiedEdits[`group_${groupIndex}`];
+                if (!edit) return;
+
+                const representative = edit.representative;
+                const merges = edit.merges;
+
+                // 병합할 항목들 처리
+                group.items_list.forEach(item => {
+                    if (merges[item.text] && item.text !== representative) {
+                        // 이 항목이 속한 모든 시트에서 변경
+                        item.groups.forEach(groupName => {
+                            allChanges[groupName].push({
+                                old: item.text,
+                                new: representative
+                            });
+                        });
+                    }
+                });
+            });
+
+            // 모든 시트에 변경사항 적용
+            for (let i = 0; i < numGroups; i++) {
+                const groupName = document.getElementById(`groupName${i}`).value;
+                const changes = allChanges[groupName];
+
+                if (changes && changes.length > 0) {
+                    applyChangesToInputByName(groupName, changes);
+                }
+            }
+
+            closeUnifiedModal();
+
+            // 재분석
+            setTimeout(() => {
+                // 편집 데이터 초기화
+                unifiedEdits = {};
+                saveEditsToStorage();
+                analyzeData();
+            }, 300);
+        }
+
+        function applyChangesToInputByName(groupName, changes) {
+            const numGroups = parseInt(document.getElementById('numGroups').value);
+            let groupIndex = -1;
+
+            for (let i = 0; i < numGroups; i++) {
+                if (document.getElementById(`groupName${i}`).value === groupName) {
+                    groupIndex = i;
+                    break;
+                }
+            }
+
+            if (groupIndex === -1) return;
+
+            const textarea = document.getElementById(`groupData${groupIndex}`);
+            let lines = textarea.value.split('\n');
+
+            changes.forEach(change => {
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i] === change.old) {
+                        lines[i] = change.new;
+                    }
+                }
+            });
+
+            textarea.value = lines.join('\n');
+            updateCount(groupIndex);
+        }
+
+        // 기존 openEditModal 함수 제거 (사용 안 함)
         function openEditModal(key) {
             currentEditKey = key;
             const [from, to] = key.split('→');

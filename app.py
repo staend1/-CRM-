@@ -172,6 +172,83 @@ def analyze_groups(groups_data):
 
     return result
 
+def find_all_similar_groups(groups_data, threshold=75):
+    """
+    모든 시트의 모든 항목을 분석하여 유사한 것끼리 그룹화
+
+    Returns:
+        [
+            {
+                'items': [
+                    {'text': '건국대학교', 'groups': ['그룹1', '그룹2']},
+                    {'text': '건국대학교 연구실', 'groups': ['그룹2']}
+                ],
+                'representative': '건국대학교'  # 가장 많이 등장하는 항목
+            }
+        ]
+    """
+    # 모든 항목 수집 (중복 포함, 어느 그룹에서 왔는지 기록)
+    all_items_with_source = []
+    for group_name, items in groups_data.items():
+        for item in items:
+            all_items_with_source.append({
+                'text': item,
+                'group': group_name
+            })
+
+    # 유사도 기반 그룹화
+    groups = []
+    processed = set()
+
+    for i, item1 in enumerate(all_items_with_source):
+        if item1['text'] in processed:
+            continue
+
+        # 새 그룹 시작
+        group = {
+            'items': {}  # text -> [groups]
+        }
+        group['items'][item1['text']] = [item1['group']]
+        processed.add(item1['text'])
+
+        # 유사한 항목 찾기
+        for j, item2 in enumerate(all_items_with_source):
+            if i >= j or item2['text'] in processed:
+                continue
+
+            # 유사도 계산
+            ratio1 = fuzz.ratio(item1['text'], item2['text'])
+            ratio2 = fuzz.partial_ratio(item1['text'], item2['text'])
+            ratio3 = fuzz.token_sort_ratio(item1['text'], item2['text'])
+            best_score = max(ratio1, ratio2, ratio3)
+
+            if best_score >= threshold:
+                if item2['text'] not in group['items']:
+                    group['items'][item2['text']] = []
+                group['items'][item2['text']].append(item2['group'])
+                processed.add(item2['text'])
+
+        # 그룹에 2개 이상 항목이 있을 때만 추가
+        if len(group['items']) > 1:
+            # 가장 많이 등장하는 항목을 대표로 선택
+            item_counts = {}
+            for text, source_groups in group['items'].items():
+                item_counts[text] = len(source_groups)
+
+            representative = max(item_counts.items(), key=lambda x: (x[1], len(x[0])))[0]
+            group['representative'] = representative
+
+            # 리스트 형태로 변환
+            group['items_list'] = [
+                {'text': text, 'groups': list(set(grps)), 'count': len(set(grps))}
+                for text, grps in group['items'].items()
+            ]
+            group['items_list'].sort(key=lambda x: (-x['count'], x['text']))
+
+            groups.append(group)
+
+    return groups
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -197,6 +274,10 @@ def analyze():
 
         # 분석 실행
         analysis_result = analyze_groups(groups_data)
+
+        # 유사 항목 그룹 분석 추가
+        similar_groups = find_all_similar_groups(groups_data)
+        analysis_result['similar_groups'] = similar_groups
 
         return jsonify(analysis_result)
 
