@@ -53,7 +53,7 @@
             display: flex;
             gap: 15px;
             align-items: center;
-            flex-wrap: wrap;
+            justify-content: space-between;
         }
 
         .controls label {
@@ -783,6 +783,24 @@
         .skip-group-btn:hover {
             background: rgba(255, 255, 255, 0.3);
         }
+
+        .next-group-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .next-group-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
     </style>
 </head>
 <body>
@@ -794,9 +812,12 @@
 
         <div class="content">
             <div class="controls">
-                <label for="numGroups">비교할 그룹 수:</label>
-                <input type="number" id="numGroups" min="2" max="10" value="2">
-                <button onclick="generateGroups()">그룹 생성</button>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <label for="numGroups">비교할 그룹 수:</label>
+                    <input type="number" id="numGroups" min="2" max="10" value="2">
+                    <button onclick="generateGroups()">그룹 생성</button>
+                </div>
+                <button onclick="clearInputData()" style="background: #f44336; padding: 10px 20px; font-size: 16px; font-weight: 600;">초기화</button>
             </div>
 
             <div class="groups-container" id="groupsContainer">
@@ -847,6 +868,13 @@
     <script>
         let currentData = null;
 
+        // HTML 이스케이프 함수
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // 초기 그룹 생성
         window.onload = function() {
             generateGroups();
@@ -864,14 +892,18 @@
                     <input type="text"
                            id="groupName${i}"
                            value="그룹 ${i+1}"
-                           placeholder="그룹 이름">
+                           placeholder="그룹 이름"
+                           oninput="saveInputData()">
                     <textarea id="groupData${i}"
                               placeholder="여기에 데이터를 붙여넣으세요&#10;(엑셀/구글 시트에서 복사한 데이터)"
-                              oninput="updateCount(${i})"></textarea>
+                              oninput="updateCount(${i}); saveInputData()"></textarea>
                     <div class="item-count" id="count${i}">0개 항목</div>
                 `;
                 container.appendChild(groupBox);
             }
+
+            // 저장된 데이터 복원
+            loadInputData();
 
             document.getElementById('results').classList.remove('show');
         }
@@ -1107,6 +1139,7 @@
 
         let currentCandidateGroupIndex = 0;
         let mergeGroups = {}; // groupIndex -> [{ id, representative, items: [] }]
+        let similarGroups = []; // 전역 변수로 선언
 
         function openUnifiedEditor() {
             if (!currentData || !currentData.similar_groups) {
@@ -1114,7 +1147,7 @@
                 return;
             }
 
-            const similarGroups = currentData.similar_groups;
+            similarGroups = currentData.similar_groups; // 전역 변수에 할당
 
             if (similarGroups.length === 0) {
                 alert('유사한 항목이 없습니다.');
@@ -1159,7 +1192,9 @@
                             (${groupIndex + 1} / ${similarGroups.length})
                         </span>
                     </div>
-                    <button class="skip-group-btn" onclick="skipCurrentGroup()">이 그룹 건너뛰기</button>
+                    <div style="font-size: 13px; opacity: 0.95; margin-top: 5px;">
+                        💡 항목들을 선택해 병합 그룹을 만드세요
+                    </div>
                 </div>
 
                 <div style="margin-bottom: 20px;">
@@ -1170,11 +1205,13 @@
             // 후보 항목들 표시
             group.items_list.forEach((item, itemIndex) => {
                 const groupsText = item.groups.join(', ');
+                const escapedText = escapeHtml(item.text);
+                const escapedGroups = escapeHtml(groupsText);
                 html += `
                     <div class="candidate-item"
                          draggable="true"
-                         data-item-text="${item.text}"
-                         data-item-groups="${groupsText}"
+                         data-item-text="${escapedText}"
+                         data-item-groups="${escapedGroups}"
                          ondragstart="dragStart(event)"
                          onclick="toggleCandidateSelection(this)">
                         <strong>${item.text}</strong>
@@ -1185,16 +1222,25 @@
 
             html += `
                     </div>
+                    <div id="quickAddButton_${groupIndex}" style="margin-top: 10px; display: none;">
+                        <button class="add-merge-group-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;" onclick="addNewMergeGroup(${groupIndex})">
+                            ✨ 선택한 항목으로 병합 그룹 추가
+                        </button>
+                    </div>
+
+                    <div style="margin-top: 15px; text-align: right;">
+                        ${groupIndex < similarGroups.length - 1
+                            ? '<button class="next-group-btn" onclick="goToNextGroup()">다음 후보군 →</button>'
+                            : '<button class="next-group-btn" onclick="finishEditing()">편집 완료</button>'
+                        }
+                    </div>
                 </div>
 
                 <div style="margin-bottom: 20px;">
-                    <h4 style="color: #667eea; margin-bottom: 15px;">🔗 병합 그룹 만들기:</h4>
+                    <h4 style="color: #667eea; margin-bottom: 15px;">🔗 병합 그룹</h4>
                     <div id="mergeGroupsContainer_${groupIndex}">
                         <!-- 병합 그룹들이 여기 표시됨 -->
                     </div>
-                    <button class="add-merge-group-btn" onclick="addNewMergeGroup(${groupIndex})">
-                        + 새 병합 그룹 추가
-                    </button>
                 </div>
             `;
 
@@ -1211,8 +1257,21 @@
         }
 
         function skipCurrentGroup() {
-            currentCandidateGroupIndex++;
-            showCandidateGroup(currentCandidateGroupIndex);
+            goToNextGroup();
+        }
+
+        function goToNextGroup() {
+            if (currentCandidateGroupIndex < similarGroups.length - 1) {
+                currentCandidateGroupIndex++;
+                showCandidateGroup(currentCandidateGroupIndex);
+            } else {
+                finishEditing();
+            }
+        }
+
+        function finishEditing() {
+            alert('모든 후보군 검토가 완료되었습니다.\n이제 "모든 시트에 반영" 버튼을 눌러 변경사항을 적용하세요.');
+            document.getElementById('unifiedModal').style.display = 'none';
         }
 
         let draggedItem = null;
@@ -1227,6 +1286,26 @@
 
         function toggleCandidateSelection(element) {
             element.classList.toggle('selected');
+
+            // 부모 candidate-pool 찾기
+            const pool = element.closest('[id^="candidatePool_"]');
+            if (pool) {
+                const groupIndex = parseInt(pool.id.split('_')[1]);
+                updateQuickAddButton(groupIndex);
+            }
+        }
+
+        function updateQuickAddButton(groupIndex) {
+            const selectedItems = document.querySelectorAll(`#candidatePool_${groupIndex} .candidate-item.selected`);
+            const quickBtn = document.getElementById(`quickAddButton_${groupIndex}`);
+
+            if (quickBtn) {
+                if (selectedItems.length > 0) {
+                    quickBtn.style.display = 'block';
+                } else {
+                    quickBtn.style.display = 'none';
+                }
+            }
         }
 
         function addNewMergeGroup(groupIndex) {
@@ -1261,6 +1340,9 @@
 
             saveMergeGroupsToStorage();
             renderMergeGroup(groupIndex, mergeGroup);
+
+            // 퀵 추가 버튼 숨기기
+            updateQuickAddButton(groupIndex);
         }
 
         function renderMergeGroup(groupIndex, mergeGroup) {
@@ -1283,7 +1365,7 @@
                     <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">
                         대표 이름:
                     </label>
-                    <select onchange="updateRepresentative(${groupIndex}, ${mergeGroup.id}, this.value)">
+                    <select id="repSelect_${mergeGroup.id}" onchange="handleRepresentativeChange(${groupIndex}, ${mergeGroup.id}, this.value)">
             `;
 
             mergeGroup.items.forEach(item => {
@@ -1292,7 +1374,24 @@
             });
 
             html += `
+                        <option value="__NEW__">✏️ 새 이름 입력...</option>
                     </select>
+                    <div id="customNameInput_${mergeGroup.id}" style="display: none; margin-top: 10px;">
+                        <input type="text"
+                               id="customName_${mergeGroup.id}"
+                               placeholder="새로운 대표 이름 입력"
+                               style="width: 100%; padding: 8px; border: 2px solid #667eea; border-radius: 6px; font-size: 14px;">
+                        <div style="margin-top: 8px; display: flex; gap: 8px;">
+                            <button onclick="applyCustomName(${groupIndex}, ${mergeGroup.id})"
+                                    style="flex: 1; padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                적용
+                            </button>
+                            <button onclick="cancelCustomName(${mergeGroup.id})"
+                                    style="flex: 1; padding: 6px 12px; background: #ccc; color: #333; border: none; border-radius: 6px; cursor: pointer;">
+                                취소
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="merge-group-items"
@@ -1346,6 +1445,60 @@
             draggedItem = null;
         }
 
+        function handleRepresentativeChange(groupIndex, mergeGroupId, value) {
+            if (value === '__NEW__') {
+                // 새 이름 입력 UI 표시
+                document.getElementById(`customNameInput_${mergeGroupId}`).style.display = 'block';
+                document.getElementById(`customName_${mergeGroupId}`).focus();
+            } else {
+                // 기존 이름 선택
+                updateRepresentative(groupIndex, mergeGroupId, value);
+            }
+        }
+
+        function applyCustomName(groupIndex, mergeGroupId) {
+            const customNameInput = document.getElementById(`customName_${mergeGroupId}`);
+            const customName = customNameInput.value.trim();
+
+            if (!customName) {
+                alert('새 이름을 입력해주세요.');
+                return;
+            }
+
+            // 대표 이름 업데이트
+            updateRepresentative(groupIndex, mergeGroupId, customName);
+
+            // 셀렉트 박스에 새 옵션 추가하고 선택
+            const selectElement = document.getElementById(`repSelect_${mergeGroupId}`);
+            const newOption = document.createElement('option');
+            newOption.value = customName;
+            newOption.text = customName;
+            newOption.selected = true;
+
+            // __NEW__ 옵션 바로 앞에 추가
+            const newOptionElement = selectElement.querySelector('option[value="__NEW__"]');
+            selectElement.insertBefore(newOption, newOptionElement);
+
+            // 입력 UI 숨기기
+            document.getElementById(`customNameInput_${mergeGroupId}`).style.display = 'none';
+            customNameInput.value = '';
+        }
+
+        function cancelCustomName(mergeGroupId) {
+            // 셀렉트를 원래 값으로 복원
+            const selectElement = document.getElementById(`repSelect_${mergeGroupId}`);
+            const mergeGroupsList = Object.values(mergeGroups).flat();
+            const mergeGroup = mergeGroupsList.find(mg => mg.id === mergeGroupId);
+
+            if (mergeGroup) {
+                selectElement.value = mergeGroup.representative;
+            }
+
+            // 입력 UI 숨기기
+            document.getElementById(`customNameInput_${mergeGroupId}`).style.display = 'none';
+            document.getElementById(`customName_${mergeGroupId}`).value = '';
+        }
+
         function updateRepresentative(groupIndex, mergeGroupId, newRep) {
             const mergeGroupsList = mergeGroups[`group_${groupIndex}`];
             const mergeGroup = mergeGroupsList.find(mg => mg.id === mergeGroupId);
@@ -1373,6 +1526,59 @@
 
         function saveMergeGroupsToStorage() {
             localStorage.setItem('salesmap_merge_groups', JSON.stringify(mergeGroups));
+        }
+
+        function saveInputData() {
+            const numGroups = parseInt(document.getElementById('numGroups').value);
+            const inputData = { numGroups: numGroups, groups: [] };
+
+            for (let i = 0; i < numGroups; i++) {
+                const nameInput = document.getElementById(`groupName${i}`);
+                const dataTextarea = document.getElementById(`groupData${i}`);
+
+                if (nameInput && dataTextarea) {
+                    inputData.groups.push({
+                        name: nameInput.value,
+                        data: dataTextarea.value
+                    });
+                }
+            }
+
+            localStorage.setItem('salesmap_input_data', JSON.stringify(inputData));
+        }
+
+        function loadInputData() {
+            const saved = localStorage.getItem('salesmap_input_data');
+            if (!saved) return;
+
+            try {
+                const inputData = JSON.parse(saved);
+                const currentNumGroups = parseInt(document.getElementById('numGroups').value);
+
+                // 그룹 개수가 맞는 경우만 복원
+                if (inputData.numGroups === currentNumGroups) {
+                    inputData.groups.forEach((group, i) => {
+                        const nameInput = document.getElementById(`groupName${i}`);
+                        const dataTextarea = document.getElementById(`groupData${i}`);
+
+                        if (nameInput && dataTextarea) {
+                            nameInput.value = group.name;
+                            dataTextarea.value = group.data;
+                            updateCount(i);
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to load input data:', e);
+            }
+        }
+
+        function clearInputData() {
+            if (confirm('저장된 입력 데이터를 모두 초기화하시겠습니까?')) {
+                localStorage.removeItem('salesmap_input_data');
+                localStorage.removeItem('salesmap_merge_groups');
+                generateGroups();
+            }
         }
 
         function oldOpenUnifiedEditor_UNUSED() {
@@ -1549,15 +1755,17 @@
                 }
             }
 
+            // 편집 데이터 초기화
+            mergeGroups = {};
+            saveMergeGroupsToStorage();
+
+            // 모달 닫기
             closeUnifiedModal();
 
-            // 재분석
-            setTimeout(() => {
-                // 편집 데이터 초기화
-                mergeGroups = {};
-                saveMergeGroupsToStorage();
-                analyzeData();
-            }, 300);
+            // 백그라운드에서 재분석
+            analyzeData().then(() => {
+                alert('변경사항이 반영되었습니다.\n교집합/차집합 분석 결과가 업데이트되었습니다.\n\n계속 작업하려면 "유사 항목 통합 편집" 버튼을 다시 클릭하세요.');
+            });
         }
 
         function applyChangesToInputByName(groupName, changes) {
