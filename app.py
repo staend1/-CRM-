@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, jsonify
 from itertools import combinations
 from collections import defaultdict
 from fuzzywuzzy import fuzz
+from korean_romanizer.romanizer import Romanizer
+import re
 
 app = Flask(__name__)
 
@@ -172,6 +174,57 @@ def analyze_groups(groups_data):
 
     return result
 
+def is_hangul(text):
+    """한글이 포함되어 있는지 확인"""
+    return bool(re.search('[가-힣]', text))
+
+def calculate_similarity_with_romanization(text1, text2, threshold=75):
+    """
+    두 텍스트의 유사도를 계산 (로마자 변환 포함)
+
+    Returns:
+        best_score (int): 0-100 사이의 점수
+    """
+    # 1. 기본 fuzzy matching
+    ratio1 = fuzz.ratio(text1, text2)
+    ratio2 = fuzz.partial_ratio(text1, text2)
+    ratio3 = fuzz.token_sort_ratio(text1, text2)
+    best_score = max(ratio1, ratio2, ratio3)
+
+    # 이미 threshold 넘으면 로마자 변환 불필요
+    if best_score >= threshold:
+        return best_score
+
+    # 2. 로마자 변환 후 비교 (한글과 영문이 섞인 경우)
+    # 한글 포함 여부 확인
+    has_hangul_1 = is_hangul(text1)
+    has_hangul_2 = is_hangul(text2)
+
+    # 둘 중 하나만 한글이면 로마자 변환해서 비교
+    if has_hangul_1 != has_hangul_2:
+        try:
+            if has_hangul_1:
+                # text1이 한글이면 로마자로 변환
+                romanized1 = Romanizer(text1).romanize().lower()
+                rom_ratio1 = fuzz.ratio(romanized1, text2.lower())
+                rom_ratio2 = fuzz.partial_ratio(romanized1, text2.lower())
+                rom_ratio3 = fuzz.token_sort_ratio(romanized1, text2.lower())
+                rom_score = max(rom_ratio1, rom_ratio2, rom_ratio3)
+                best_score = max(best_score, rom_score)
+            else:
+                # text2가 한글이면 로마자로 변환
+                romanized2 = Romanizer(text2).romanize().lower()
+                rom_ratio1 = fuzz.ratio(text1.lower(), romanized2)
+                rom_ratio2 = fuzz.partial_ratio(text1.lower(), romanized2)
+                rom_ratio3 = fuzz.token_sort_ratio(text1.lower(), romanized2)
+                rom_score = max(rom_ratio1, rom_ratio2, rom_ratio3)
+                best_score = max(best_score, rom_score)
+        except Exception as e:
+            # 로마자 변환 실패 시 기본 점수 사용
+            pass
+
+    return best_score
+
 def find_all_similar_groups(groups_data, threshold=75):
     """
     모든 시트의 모든 항목을 분석하여 유사한 것끼리 그룹화
@@ -216,11 +269,8 @@ def find_all_similar_groups(groups_data, threshold=75):
             if i >= j or item2['text'] in processed:
                 continue
 
-            # 유사도 계산
-            ratio1 = fuzz.ratio(item1['text'], item2['text'])
-            ratio2 = fuzz.partial_ratio(item1['text'], item2['text'])
-            ratio3 = fuzz.token_sort_ratio(item1['text'], item2['text'])
-            best_score = max(ratio1, ratio2, ratio3)
+            # 유사도 계산 (로마자 변환 포함)
+            best_score = calculate_similarity_with_romanization(item1['text'], item2['text'], threshold)
 
             if best_score >= threshold:
                 if item2['text'] not in group['items']:

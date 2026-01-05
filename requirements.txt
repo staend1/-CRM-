@@ -2,3 +2,4 @@ Flask==3.0.0
 fuzzywuzzy==0.18.0
 python-Levenshtein==0.27.3
 gunicorn==21.2.0
+korean-romanizer==0.28.0
