@@ -46,7 +46,11 @@ pip install -r requirements.txt
 
 **실행 명령어:**
 ```bash
-gunicorn app:app
+bash start.sh
+```
+또는
+```bash
+gunicorn app:app --bind 0.0.0.0:$PORT --workers 2
 ```
 
 **포트:**
