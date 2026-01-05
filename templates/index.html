@@ -1122,21 +1122,23 @@
             }
             tsvContent += headers.join('\t') + '\n';
 
-            // 데이터 (최대 길이 찾기)
+            // 데이터 (빈 행 포함, 원본 그대로)
             const allData = [];
             let maxLength = 0;
 
             for (let i = 0; i < numGroups; i++) {
-                const data = document.getElementById(`groupData${i}`).value.trim().split('\n').filter(line => line.trim());
+                // split만 하고 filter 제거 - 빈 행도 유지
+                const data = document.getElementById(`groupData${i}`).value.split('\n');
                 allData.push(data);
                 maxLength = Math.max(maxLength, data.length);
             }
 
-            // 행별로 TSV 생성
+            // 행별로 TSV 생성 (빈 행도 포함)
             for (let row = 0; row < maxLength; row++) {
                 const rowData = [];
                 for (let col = 0; col < numGroups; col++) {
-                    rowData.push(allData[col][row] || '');
+                    // 빈 문자열도 그대로 유지
+                    rowData.push(allData[col][row] !== undefined ? allData[col][row] : '');
                 }
                 tsvContent += rowData.join('\t') + '\n';
             }
