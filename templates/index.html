@@ -394,6 +394,241 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* 모달 스타일 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            overflow-y: auto;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5em;
+        }
+
+        .modal-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .edit-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .edit-item-header {
+            font-weight: 700;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .edit-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .edit-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .edit-option:hover {
+            border-color: #667eea;
+            background: #f3f4ff;
+        }
+
+        .edit-option input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .edit-option label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .edit-option .similarity-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .custom-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .custom-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-footer .progress {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .modal-footer .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-apply {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-apply:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-skip {
+            padding: 12px 30px;
+            background: #e0e0e0;
+            color: #666;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-skip:hover {
+            background: #d0d0d0;
+        }
+
+        .edit-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-left: 10px;
+        }
+
+        .edit-btn:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+
+        .download-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+            border: 2px solid #667eea;
+        }
+
+        .download-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -424,6 +659,33 @@
 
             <div class="results" id="results">
                 <!-- 분석 결과가 여기 표시됨 -->
+            </div>
+
+            <!-- 다운로드 섹션 -->
+            <div class="download-section" id="downloadSection" style="display: none;">
+                <h3 style="margin-bottom: 15px;">📥 교정된 데이터 다운로드</h3>
+                <p style="color: #666; margin-bottom: 15px;">모든 수정사항이 반영된 데이터를 다운로드하세요</p>
+                <button class="download-btn" onclick="downloadCorrectedData()">다운로드 (TSV 형식)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 편집 모달 -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">매핑 편집</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 동적으로 생성됨 -->
+            </div>
+            <div class="modal-footer">
+                <div class="progress" id="modalProgress">0 / 0</div>
+                <div class="actions">
+                    <button class="btn-skip" onclick="skipAllModal()">모두 넘어가기</button>
+                    <button class="btn-apply" onclick="applyChanges()">반영하고 재분석</button>
+                </div>
             </div>
         </div>
     </div>
@@ -564,6 +826,7 @@
                             <div>
                                 <strong>${from}</strong>에는 있지만 <strong>${to}</strong>에는 없음
                                 <span class="badge warning">${value.missing.length}개</span>
+                                <button class="edit-btn" onclick="event.stopPropagation(); openEditModal('${key}')">✏️ 편집</button>
                             </div>
                         </div>
                         <div class="collapsible-content">
@@ -660,6 +923,9 @@
             resultsDiv.innerHTML = html;
             resultsDiv.classList.add('show');
 
+            // 다운로드 섹션 표시
+            document.getElementById('downloadSection').style.display = 'block';
+
             // 스크롤
             resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -673,6 +939,220 @@
             } else {
                 content.style.maxHeight = content.scrollHeight + "px";
             }
+        }
+
+        // ========== 편집 모달 기능 ==========
+        let editModalData = {};
+        let currentEditKey = '';
+        let editsToApply = {};
+
+        function openEditModal(key) {
+            currentEditKey = key;
+            const [from, to] = key.split('→');
+            const missingItems = currentData.coverage_matrix[key].missing;
+
+            document.getElementById('modalTitle').textContent = `${from} → ${to} 매핑 편집`;
+
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = '';
+
+            editModalData[key] = {};
+
+            missingItems.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'edit-item';
+
+                let optionsHTML = `
+                    <div class="edit-item-header">${index + 1}. ${item.item}</div>
+                    <div class="edit-options">
+                `;
+
+                // 유사 항목들
+                if (item.suggestions && item.suggestions.length > 0) {
+                    item.suggestions.forEach((suggestion, si) => {
+                        const radioId = `radio_${index}_${si}`;
+                        const scoreColor = suggestion.score >= 90 ? '#28a745' : suggestion.score >= 80 ? '#ffc107' : '#667eea';
+                        optionsHTML += `
+                            <div class="edit-option" onclick="selectOption(this)">
+                                <input type="radio" id="${radioId}" name="edit_${index}" value="suggestion_${si}" data-text="${suggestion.text}">
+                                <label for="${radioId}">${suggestion.text}</label>
+                                <span class="similarity-badge" style="background: ${scoreColor}">${suggestion.score}% 유사</span>
+                            </div>
+                        `;
+                    });
+                }
+
+                // 새로 입력
+                const customRadioId = `radio_${index}_custom`;
+                optionsHTML += `
+                    <div class="edit-option" onclick="selectOption(this)">
+                        <input type="radio" id="${customRadioId}" name="edit_${index}" value="custom">
+                        <label for="${customRadioId}">새로 입력</label>
+                    </div>
+                    <input type="text" class="custom-input" id="custom_${index}" placeholder="새 이름 입력..." style="display: none;">
+                `;
+
+                // 넘어가기 (허용)
+                const skipRadioId = `radio_${index}_skip`;
+                optionsHTML += `
+                    <div class="edit-option" onclick="selectOption(this)">
+                        <input type="radio" id="${skipRadioId}" name="edit_${index}" value="skip">
+                        <label for="${skipRadioId}">넘어가기 (현재 상태 유지)</label>
+                    </div>
+                `;
+
+                optionsHTML += '</div>';
+                itemDiv.innerHTML = optionsHTML;
+                modalBody.appendChild(itemDiv);
+            });
+
+            document.getElementById('modalProgress').textContent = `${missingItems.length}개 항목`;
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        function selectOption(optionElement) {
+            const radio = optionElement.querySelector('input[type="radio"]');
+            radio.checked = true;
+
+            // custom 선택 시 input 보이기
+            const customInput = optionElement.parentElement.querySelector('.custom-input');
+            if (customInput) {
+                if (radio.value === 'custom') {
+                    customInput.style.display = 'block';
+                    customInput.focus();
+                } else {
+                    customInput.style.display = 'none';
+                }
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('show');
+        }
+
+        function skipAllModal() {
+            const modalBody = document.getElementById('modalBody');
+            const skipRadios = modalBody.querySelectorAll('input[value="skip"]');
+            skipRadios.forEach(radio => {
+                radio.checked = true;
+            });
+        }
+
+        function applyChanges() {
+            const [from, to] = currentEditKey.split('→');
+            const missingItems = currentData.coverage_matrix[currentEditKey].missing;
+            const changes = [];
+
+            missingItems.forEach((item, index) => {
+                const selectedRadio = document.querySelector(`input[name="edit_${index}"]:checked`);
+
+                if (selectedRadio) {
+                    if (selectedRadio.value.startsWith('suggestion_')) {
+                        // 유사 항목 선택
+                        const newValue = selectedRadio.getAttribute('data-text');
+                        changes.push({ old: item.item, new: newValue });
+                    } else if (selectedRadio.value === 'custom') {
+                        // 커스텀 입력
+                        const customInput = document.getElementById(`custom_${index}`);
+                        const newValue = customInput.value.trim();
+                        if (newValue) {
+                            changes.push({ old: item.item, new: newValue });
+                        }
+                    }
+                    // skip인 경우 변경하지 않음
+                }
+            });
+
+            // Input 데이터에 변경사항 반영
+            if (changes.length > 0) {
+                applyChangesToInput(from, changes);
+
+                // 모달 닫기
+                closeModal();
+
+                // 재분석
+                setTimeout(() => {
+                    analyzeData();
+                }, 300);
+            } else {
+                closeModal();
+            }
+        }
+
+        function applyChangesToInput(groupName, changes) {
+            // 그룹 이름으로 input 찾기
+            const numGroups = parseInt(document.getElementById('numGroups').value);
+            let groupIndex = -1;
+
+            for (let i = 0; i < numGroups; i++) {
+                const name = document.getElementById(`groupName${i}`).value;
+                if (name === groupName) {
+                    groupIndex = i;
+                    break;
+                }
+            }
+
+            if (groupIndex === -1) return;
+
+            // 현재 데이터 가져오기
+            const textarea = document.getElementById(`groupData${groupIndex}`);
+            let lines = textarea.value.split('\n');
+
+            // 변경사항 적용
+            changes.forEach(change => {
+                const oldIndex = lines.indexOf(change.old);
+                if (oldIndex !== -1) {
+                    lines[oldIndex] = change.new;
+                }
+            });
+
+            // 업데이트
+            textarea.value = lines.join('\n');
+            updateCount(groupIndex);
+        }
+
+        function downloadCorrectedData() {
+            const numGroups = parseInt(document.getElementById('numGroups').value);
+            let tsvContent = '';
+
+            // 헤더
+            const headers = [];
+            for (let i = 0; i < numGroups; i++) {
+                headers.push(document.getElementById(`groupName${i}`).value);
+            }
+            tsvContent += headers.join('\t') + '\n';
+
+            // 데이터 (최대 길이 찾기)
+            const allData = [];
+            let maxLength = 0;
+
+            for (let i = 0; i < numGroups; i++) {
+                const data = document.getElementById(`groupData${i}`).value.trim().split('\n').filter(line => line.trim());
+                allData.push(data);
+                maxLength = Math.max(maxLength, data.length);
+            }
+
+            // 행별로 TSV 생성
+            for (let row = 0; row < maxLength; row++) {
+                const rowData = [];
+                for (let col = 0; col < numGroups; col++) {
+                    rowData.push(allData[col][row] || '');
+                }
+                tsvContent += rowData.join('\t') + '\n';
+            }
+
+            // 다운로드
+            const blob = new Blob([tsvContent], { type: 'text/tab-separated-values;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+
+            link.setAttribute('href', url);
+            link.setAttribute('download', `salesmap_corrected_${new Date().toISOString().slice(0, 10)}.tsv`);
+            link.style.visibility = 'hidden';
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>
