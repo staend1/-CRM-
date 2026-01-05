@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>세일즈맵 CRM - 매핑 키 검사기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .controls {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .controls label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .controls input[type="number"] {
+            width: 80px;
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .controls button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .controls button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .groups-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .group-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+
+        .group-box:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+
+        .group-box input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .group-box textarea {
+            width: 100%;
+            height: 200px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .group-box textarea:focus,
+        .group-box input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .item-count {
+            font-size: 13px;
+            color: #666;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .analyze-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 30px;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .analyze-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .summary-card h3 {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .summary-card .number {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            font-size: 1.5em;
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .matrix-table th,
+        .matrix-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .matrix-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        .matrix-table tr:hover {
+            background: #f0f0f0;
+        }
+
+        .percentage {
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .percentage.high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .percentage.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .percentage.low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .items-list {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .items-list ul {
+            list-style: none;
+        }
+
+        .items-list li {
+            padding: 8px;
+            border-bottom: 1px solid #f0f0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .items-list li:last-child {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge.danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .collapsible {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .collapsible:hover {
+            background: #f0f0f0;
+        }
+
+        .collapsible::after {
+            content: '▼';
+            transition: transform 0.3s;
+        }
+
+        .collapsible.active::after {
+            transform: rotate(-180deg);
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .loading .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .groups-container {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 세일즈맵 CRM 매핑 키 검사기</h1>
+            <p>고객, 회사, 리드, 딜, 커스텀 오브젝트 간 데이터 매핑 일치 여부를 확인하세요</p>
+        </div>
+
+        <div class="content">
+            <div class="controls">
+                <label for="numGroups">비교할 그룹 수:</label>
+                <input type="number" id="numGroups" min="2" max="10" value="2">
+                <button onclick="generateGroups()">그룹 생성</button>
+            </div>
+
+            <div class="groups-container" id="groupsContainer">
+                <!-- 동적으로 생성됨 -->
+            </div>
+
+            <button class="analyze-btn" onclick="analyzeData()">🔍 분석 시작</button>
+
+            <div class="error" id="error"></div>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>데이터를 분석 중입니다...</p>
+            </div>
+
+            <div class="results" id="results">
+                <!-- 분석 결과가 여기 표시됨 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = null;
+
+        // 초기 그룹 생성
+        window.onload = function() {
+            generateGroups();
+        };
+
+        function generateGroups() {
+            const numGroups = parseInt(document.getElementById('numGroups').value);
+            const container = document.getElementById('groupsContainer');
+            container.innerHTML = '';
+
+            for (let i = 0; i < numGroups; i++) {
+                const groupBox = document.createElement('div');
+                groupBox.className = 'group-box';
+                groupBox.innerHTML = `
+                    <input type="text"
+                           id="groupName${i}"
+                           value="그룹 ${i+1}"
+                           placeholder="그룹 이름">
+                    <textarea id="groupData${i}"
+                              placeholder="여기에 데이터를 붙여넣으세요&#10;(엑셀/구글 시트에서 복사한 데이터)"
+                              oninput="updateCount(${i})"></textarea>
+                    <div class="item-count" id="count${i}">0개 항목</div>
+                `;
+                container.appendChild(groupBox);
+            }
+
+            document.getElementById('results').classList.remove('show');
+        }
+
+        function updateCount(index) {
+            const textarea = document.getElementById(`groupData${index}`);
+            const text = textarea.value.trim();
+            const lines = text ? text.split('\n').filter(line => line.trim()).length : 0;
+            document.getElementById(`count${index}`).textContent = `${lines}개 항목`;
+        }
+
+        async function analyzeData() {
+            const numGroups = parseInt(document.getElementById('numGroups').value);
+            const data = { num_groups: numGroups };
+
+            // 각 그룹의 데이터 수집
+            for (let i = 0; i < numGroups; i++) {
+                data[`group_${i}_name`] = document.getElementById(`groupName${i}`).value;
+                data[`group_${i}_data`] = document.getElementById(`groupData${i}`).value;
+            }
+
+            // UI 상태 업데이트
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('error').classList.remove('show');
+            document.getElementById('results').classList.remove('show');
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || '분석 중 오류가 발생했습니다.');
+                }
+
+                currentData = result;
+                displayResults(result);
+
+            } catch (error) {
+                document.getElementById('error').textContent = error.message;
+                document.getElementById('error').classList.add('show');
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+            }
+        }
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            let html = '';
+
+            // 1. 요약 카드
+            html += '<div class="summary-cards">';
+            for (const [groupName, size] of Object.entries(data.group_sizes)) {
+                html += `
+                    <div class="summary-card">
+                        <h3>${groupName}</h3>
+                        <div class="number">${size}</div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+
+            // 2. 커버리지 매트릭스 (매핑 성공률)
+            html += '<div class="section">';
+            html += '<h2>📊 매핑 커버리지 분석</h2>';
+            html += '<p style="margin-bottom: 15px; color: #666;">각 그룹의 항목이 다른 그룹에 얼마나 매핑되는지 보여줍니다. 낮은 비율은 매핑 실패를 의미합니다.</p>';
+            html += '<table class="matrix-table">';
+            html += '<thead><tr><th>출발 그룹</th><th>대상 그룹</th><th>매핑 성공</th><th>매핑 실패</th><th>성공률</th></tr></thead>';
+            html += '<tbody>';
+
+            for (const [key, value] of Object.entries(data.coverage_matrix)) {
+                const [from, to] = key.split('→');
+                const percentage = value.percentage;
+                const percentageClass = percentage >= 80 ? 'high' : percentage >= 50 ? 'medium' : 'low';
+
+                html += `
+                    <tr>
+                        <td><strong>${from}</strong></td>
+                        <td><strong>${to}</strong></td>
+                        <td>${value.covered}개</td>
+                        <td>${value.total - value.covered}개</td>
+                        <td><span class="percentage ${percentageClass}">${percentage}%</span></td>
+                    </tr>
+                `;
+            }
+
+            html += '</tbody></table>';
+            html += '</div>';
+
+            // 3. 차집합 분석 (그룹별 고유 항목)
+            html += '<div class="section">';
+            html += '<h2>🔍 차집합 분석</h2>';
+            html += '<p style="margin-bottom: 15px; color: #666;">각 그룹에 있지만 다른 특정 그룹에는 없는 항목들입니다. 데이터 이관 시 매핑되지 않을 수 있으니 확인이 필요합니다.</p>';
+
+            for (const [key, value] of Object.entries(data.coverage_matrix)) {
+                if (value.missing.length > 0) {
+                    const [from, to] = key.split('→');
+                    html += `
+                        <div class="collapsible" onclick="toggleCollapse(this)">
+                            <div>
+                                <strong>${from}</strong>에는 있지만 <strong>${to}</strong>에는 없음
+                                <span class="badge warning">${value.missing.length}개</span>
+                            </div>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="items-list">
+                                <ul>
+                    `;
+
+                    // 각 missing 항목과 유사 항목 표시
+                    for (const missingItem of value.missing) {
+                        html += `<li>${missingItem.item}`;
+
+                        // 유사 항목이 있으면 표시
+                        if (missingItem.suggestions && missingItem.suggestions.length > 0) {
+                            html += '<div style="margin-left: 20px; margin-top: 8px; padding: 8px; background: #f3f4ff; border-left: 3px solid #667eea; border-radius: 4px;">';
+                            html += '<div style="font-size: 11px; color: #666; margin-bottom: 4px; font-weight: 600;">🔗 유사한 항목 (확인 필요):</div>';
+                            for (const suggestion of missingItem.suggestions) {
+                                const scoreColor = suggestion.score >= 90 ? '#28a745' : suggestion.score >= 80 ? '#ffc107' : '#667eea';
+                                html += `<div style="font-size: 12px; color: #333; margin: 2px 0;">→ ${suggestion.text} <span style="background: ${scoreColor}; color: white; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 11px;">${suggestion.score}% 유사</span></div>`;
+                            }
+                            html += '</div>';
+                        }
+
+                        html += '</li>';
+                    }
+
+                    html += `
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            html += '</div>';
+
+            // 4. 교집합 분석
+            if (Object.keys(data.intersections).length > 0) {
+                html += '<div class="section">';
+                html += '<h2>🔗 교집합 분석 (매핑 성공 항목)</h2>';
+                html += '<p style="margin-bottom: 15px; color: #666;">두 그룹 모두에 존재하는 항목들입니다. 이 항목들은 데이터 이관 시 정상적으로 매핑됩니다.</p>';
+
+                for (const [key, value] of Object.entries(data.intersections)) {
+                    html += `
+                        <div class="collapsible" onclick="toggleCollapse(this)">
+                            <div>
+                                <strong>${key}</strong>
+                                <span class="badge success">${value.count}개</span>
+                            </div>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="items-list">
+                                <ul>
+                                    ${value.items.map(item => `<li>${item}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += '</div>';
+            }
+
+            // 5. 복합 조합 분석 (3개 이상 그룹)
+            const complexCombos = Object.entries(data.combinations).filter(([key, _]) =>
+                (key.match(/∩/g) || []).length >= 2
+            );
+
+            if (complexCombos.length > 0) {
+                html += '<div class="section">';
+                html += '<h2>🔀 복합 교집합 (3개 이상 그룹)</h2>';
+                html += '<p style="margin-bottom: 15px; color: #666;">3개 이상 그룹 모두에 존재하는 항목들입니다.</p>';
+
+                for (const [key, value] of complexCombos) {
+                    html += `
+                        <div class="collapsible" onclick="toggleCollapse(this)">
+                            <div>
+                                <strong>${key}</strong>
+                                <span class="badge success">${value.count}개</span>
+                            </div>
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="items-list">
+                                <ul>
+                                    ${value.items.map(item => `<li>${item}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += '</div>';
+            }
+
+            resultsDiv.innerHTML = html;
+            resultsDiv.classList.add('show');
+
+            // 스크롤
+            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function toggleCollapse(element) {
+            element.classList.toggle('active');
+            const content = element.nextElementSibling;
+
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        }
+    </script>
+</body>
+</html>
